@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\TempImageController;
+
 
 Route::post('/admin/login',[AuthController::class,'authenticate']);
 // Route::get('/user', function (Request $request) {
@@ -24,4 +26,5 @@ Route::group(['middleware'=>'auth:sanctum'],function(){
     Route::resource('brands',BrandController::class);
     Route::get('/sizes',[SizeController::class,'index']);
     Route::resource('products',ProductController::class);
+    Route::post('/temp-images',[TempImageController::class,'store']);
 });

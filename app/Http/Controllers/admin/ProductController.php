@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Product;
 use Illuminate\Validation\Rule;
+use App\Models\TempImage;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ProductController extends Controller
 {
@@ -55,7 +59,60 @@ class ProductController extends Controller
         }
 
         $product = Product::create($validator->validated());
+        if(!empty($request->gallery)){
+            // Ensure directories exist
+            Storage::disk('public')->makeDirectory('products/large', 0755, true);
+            Storage::disk('public')->makeDirectory('products/small', 0755, true);
+            
+            foreach($request->gallery as $key => $imageId){
+                try {
+                    $tempImage = TempImage::find($imageId);
+                    if (!$tempImage) continue;
 
+                    $extArray = explode('.',$tempImage->name);
+                    $ext = end($extArray);
+                    
+                    $imageName = $product->id.'-'.time().'-'.$key.'.'.$ext;
+                    
+                    // Get full path to temp image
+                    $tempImageFullPath = Storage::disk('public')->path($tempImage->path);
+                    
+                    if (!file_exists($tempImageFullPath)) {
+                        continue;
+                    }
+                    
+                    // Create large version (1200px width)
+                    $largePath = 'products/large/' . $imageName;
+                    $largeFullPath = Storage::disk('public')->path($largePath);
+                    $manager = new ImageManager(Driver::class);
+                    $img = $manager->read($tempImageFullPath);
+                    $img->scale(width: 1200);
+                    $img->save($largeFullPath);
+
+                    // Create small version (400px width)
+                    $smallPath = 'products/small/' . $imageName;
+                    $smallFullPath = Storage::disk('public')->path($smallPath);
+                    $manager = new ImageManager(Driver::class);
+                    $img = $manager->read($tempImageFullPath);
+                    $img->scale(width: 400);
+                    $img->save($smallFullPath);
+                    
+                    // Set the main product image to the large version
+                    if($key == 0){
+                        $product->image = $largePath;
+                        $product->save();
+                    }
+
+                    // Clean up temp image
+                    Storage::disk('public')->delete($tempImage->path);
+                    $tempImage->delete();
+                } catch (\Exception $e) {
+                    // Log the error for debugging
+                    \Log::error('Error processing product image: ' . $e->getMessage());
+                    continue;
+                }
+            }
+        }
         return response()->json([
             'status' => 200,
             'message' => 'Product Added Successfully',

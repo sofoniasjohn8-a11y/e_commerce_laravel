@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\SizeController;
+use App\Http\Controllers\Admin\ProductController;
 
 Route::post('/admin/login',[AuthController::class,'authenticate']);
 // Route::get('/user', function (Request $request) {
@@ -20,4 +22,6 @@ Route::group(['middleware'=>'auth:sanctum'],function(){
 
     Route::resource('categories',CategoryController::class);
     Route::resource('brands',BrandController::class);
+    Route::get('/sizes',[SizeController::class,'index']);
+    Route::resource('products',ProductController::class);
 });

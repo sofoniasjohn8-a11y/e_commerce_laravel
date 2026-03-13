@@ -26,4 +26,10 @@ class Product extends Model
         'status',
         'is_featured',
     ];
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
 }

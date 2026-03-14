@@ -26,10 +26,22 @@ class Product extends Model
         'status',
         'is_featured',
     ];
-    protected $appends = ['image_url'];
+   protected $appends = ['image_url'];
 
-    public function getImageUrlAttribute()
-    {
-        return $this->image ? asset('storage/' . $this->image) : null;
+   public function getImageUrlAttribute()
+{
+    if (!$this->image) {
+        return null;
+        // return asset('images/placeholder.png');
     }
+
+    // Check if the image string already contains 'products/large/'
+    if (str_contains($this->image, 'products/large/')) {
+        return asset('storage/' . $this->image);
+    }
+
+    // Otherwise, add the path (for older records that only have the filename)
+    return asset('storage/products/large/' . $this->image);
+}
+    
 }

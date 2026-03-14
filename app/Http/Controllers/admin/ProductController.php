@@ -1,19 +1,22 @@
 <?php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Product;
-use Illuminate\Validation\Rule;
 use App\Models\TempImage;
+use App\Models\ProductImage;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
+    
     public function index()
     {
         $products = Product::orderBy('created_at', 'DESC')->get();
@@ -34,15 +37,15 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'title' => 'required|string|max:255',
-            'price' => 'required|numeric',
-            'description' => 'required|string',
+            'title'             => 'required|string|max:255',
+            'price'             => 'required|numeric',
+            'description'       => 'required|string',
             'short_description' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
-            'qty' => 'required|integer',
-            'sku' => 'required|unique:products,sku|max:100',
-            'status' => 'integer',
+            'category_id'       => 'required|exists:categories,id',
+            'brand_id'          => 'required|exists:brands,id',
+            'qty'                => 'required|integer',
+            'sku'                => 'required|unique:products,sku|max:100',
+            'status'             => 'integer',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -54,88 +57,89 @@ class ProductController extends Controller
             ], 400);
         }
 
-        $product = Product::create($validator->validated());
-        if (!empty($request->gallery)) {
-            // Ensure directories exist and log results
-            $largeDirResult = Storage::disk('public')->makeDirectory('products/large', 0755, true);
-            $smallDirResult = Storage::disk('public')->makeDirectory('products/small', 0755, true);
-            \Log::debug('Directory creation', ['large' => $largeDirResult, 'small' => $smallDirResult]);
+        // Use a Transaction to ensure data integrity
+        DB::beginTransaction();
 
-            foreach ($request->gallery as $key => $imageId) {
-                \Log::debug('Processing gallery item', ['key' => $key, 'imageId' => $imageId]);
-                try {
+        try {
+            // 1. Create the Product
+            $product = Product::create($validator->validated());
+
+            if (!empty($request->gallery)) {
+                
+                // 2. Setup Directories (relative to 'public' disk root)
+                // This saves to storage/app/public/products/...
+                Storage::disk('public')->makeDirectory('products/large');
+                Storage::disk('public')->makeDirectory('products/small');
+
+                $manager = new ImageManager(new Driver());
+
+                foreach ($request->gallery as $key => $imageId) {
                     $tempImage = TempImage::find($imageId);
+                    
                     if (!$tempImage) {
-                        \Log::warning('TempImage record not found', ['id' => $imageId]);
+                        Log::warning("TempImage ID {$imageId} not found.");
                         continue;
                     }
 
-                    $extArray = explode('.', $tempImage->name);
-                    $ext = end($extArray);
-
+                    // Prepare file details
+                    $ext = pathinfo($tempImage->name, PATHINFO_EXTENSION);
                     $imageName = $product->id . '-' . time() . '-' . $key . '.' . $ext;
 
-                    // Get full path to temp image
+                    // Source path
                     $tempImageFullPath = Storage::disk('public')->path($tempImage->path);
 
                     if (!file_exists($tempImageFullPath)) {
-                        \Log::warning('Temp image file missing on disk', ['path' => $tempImageFullPath]);
+                        Log::error("Source file missing: " . $tempImageFullPath);
                         continue;
                     }
 
-                    // Create large version (limit both width and height to 800px)
+                    // 3. Process Large Image (800px width, auto height)
                     $largePath = 'products/large/' . $imageName;
                     $largeFullPath = Storage::disk('public')->path($largePath);
-                    $manager = new ImageManager(Driver::class);
-                    $img = $manager->read($tempImageFullPath);
-                    $img->resize(800, 800, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
-                    $img->save($largeFullPath);
-                    if (!file_exists($largeFullPath)) {
-                        \Log::error("Large image not saved: $largeFullPath");
-                    } else {
-                        \Log::debug('Large image saved', ['path' => $largeFullPath]);
-                    }
+                    
+                    $imgLarge = $manager->read($tempImageFullPath);
+                    $imgLarge->scale(width: 800); 
+                    $imgLarge->save($largeFullPath);
 
-                    // Create small version (resize to 400px width, keep aspect ratio)
+                    // 4. Process Small Image (400px width, auto height)
                     $smallPath = 'products/small/' . $imageName;
                     $smallFullPath = Storage::disk('public')->path($smallPath);
-                    $manager = new ImageManager(Driver::class);
-                    $img = $manager->read($tempImageFullPath);
-                    $img->resize(400, null, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
-                    $img->save($smallFullPath);
-                    if (!file_exists($smallFullPath)) {
-                        \Log::error("Small image not saved: $smallFullPath");
-                    } else {
-                        \Log::debug('Small image saved', ['path' => $smallFullPath]);
-                    }
+                    
+                    $imgSmall = $manager->read($tempImageFullPath);
+                    $imgSmall->scale(width: 400);
+                    $imgSmall->save($smallFullPath);
 
-                    // Set the main product image to the large version
+                    // 5. Save to ProductImage table
+                    $productImage = new ProductImage();
+                    $productImage->product_id = $product->id;
+                    $productImage->image = $imageName;
+                    $productImage->save();
+
+                    // 6. Set first image as main product thumbnail
                     if ($key == 0) {
-                        $product->image = $largePath;
+                       $product->image = 'products/large/' . $imageName; // Store name only or 'products/large/'.$imageName
                         $product->save();
                     }
-
-                    // Do not delete temp images; keep records/files indefinitely
-                    // Storage::disk('public')->delete($tempImage->path);
-                    // $tempImage->delete();
-                } catch (\Exception $e) {
-                    // Log the error for debugging
-                    \Log::error('Error processing product image: ' . $e->getMessage());
-                    continue;
                 }
             }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 200,
+                'message' => 'Product Added Successfully',
+                'data' => $product
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Product Store Error: ' . $e->getMessage());
+            
+            return response()->json([
+                'status' => 500,
+                'message' => 'Something went wrong: ' . $e->getMessage()
+            ], 500);
         }
-        return response()->json([
-            'status' => 200,
-            'message' => 'Product Added Successfully',
-            'data' => $product
-        ], 200);
     }
 
     public function show($id)

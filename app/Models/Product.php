@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\ProductImage;
 
 class Product extends Model
 {
@@ -43,5 +44,8 @@ class Product extends Model
     // Otherwise, add the path (for older records that only have the filename)
     return asset('storage/products/large/' . $this->image);
 }
-    
+    public function product_images(){
+        return $this->hasMany(ProductImage::class,'product_id');
+    }
+
 }

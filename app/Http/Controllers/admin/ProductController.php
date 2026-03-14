@@ -19,7 +19,7 @@ class ProductController extends Controller
     
     public function index()
     {
-        $products = Product::orderBy('created_at', 'DESC')->get();
+        $products = Product::with('product_images')->orderBy('created_at', 'DESC')->get();
         if ($products) {
             return response()->json([
                 'status' => 200,
@@ -144,7 +144,9 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::find($id);
+        $product = Product::
+        with('product_images')
+        ->find($id);
         if ($product) {
             return response()->json([
                 'status' => 200,

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class TempImage extends Model
 {
+    protected $table= 'temp_images';
       protected $appends = ['image_url'];
 
     public function getImageUrlAttribute()

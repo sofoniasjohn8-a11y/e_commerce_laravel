@@ -211,4 +211,31 @@ class ProductController extends Controller
             'message'=>'The Product has been deleted successfully'
         ],200);
     }
+    public function setDefaultImage($pro_image_id)
+    {
+        $productImage = ProductImage::find($pro_image_id);
+        if(!$productImage){
+            return response()->json([
+                'status'=>400,
+                'message'=>'The Product Image is not Found'
+            ],400);
+        }
+        $product = Product::find($productImage->product_id);
+        if(!$product){
+            return response()->json([
+                'status'=>400,
+                'message'=>'The Product is not Found'
+            ],400);
+        }
+        $product->image = $productImage->image;
+        // $product->image = $productImage->image_url;
+        $product->save();
+        return response()->json([
+            'status'=>200,
+            'message'=>'The Product Default Image has been changed successfully',
+            'data'=>$product
+        ],200);
+
+
+    }
 }

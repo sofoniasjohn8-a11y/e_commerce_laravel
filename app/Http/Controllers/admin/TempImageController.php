@@ -63,4 +63,55 @@ class TempImageController extends Controller
             'message' => 'No image file provided'
         ], 400);
     }
+    public function index(){
+        $tempImages = TempImage::all();
+        if(!$tempImages){
+            return response()->json([
+                'status' => 200,
+                'message' => 'No temporary images found',
+                'data' => []
+            ]);
+        }
+        return response()->json([
+            'status' => 200,
+            'message' => 'Temporary images retrieved successfully',
+            'data' => $tempImages
+        ]);
+    }
+    public function show($id){
+        $tempImage = TempImage::find($id);
+        if (!$tempImage) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Image not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Image retrieved successfully',
+            'data' => $tempImage
+        ]);
+    }
+    public function destroy($id)
+    {
+        $tempImage = TempImage::find($id);
+        if (!$tempImage) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Image not found'
+            ], 404);
+        }
+
+        // Delete the file from storage
+        Storage::disk('public')->delete($tempImage->path);
+
+        // Delete the database record
+        $tempImage->delete();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Image deleted successfully'
+        ]);
+    }
 }

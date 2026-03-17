@@ -238,4 +238,34 @@ class ProductController extends Controller
 
 
     }
+    public function removeImage($pro_image_id)
+    {
+        
+        $productImage = ProductImage::find($pro_image_id);
+       
+        if(!$productImage){
+            return response()->json([
+                'status'=>400,
+                'message'=>'The Product Image is not Found'
+            ],400);
+        }
+        $product = Product::find($productImage->product_id);
+        if(!$product){
+            return response()->json([
+                'status'=>400,
+                'message'=>'The Product is not Found'
+            ],400);
+        }
+        // Check if the image to be deleted is the current product thumbnail
+        if ($product->image == $productImage->image) {
+            $product->image = null; // Or set to a default image path
+            $product->save();
+        }
+        $productImage->delete();
+        return response()->json([
+            'status'=>200,
+            'message'=>'The Product Image has been deleted successfully',
+            'data'=>$product
+        ],200);
+    }
 }

@@ -27,6 +27,7 @@ Route::group(['middleware'=>'auth:sanctum'],function(){
     Route::get('/sizes',[SizeController::class,'index']);
     Route::resource('products',ProductController::class);
     Route::put('products/setDDefaultImage/{id}',[ProductController::class,'setDefaultImage']);
+    Route::delete('products/removeImage/{id}',[ProductController::class,'removeImage']);
     // Route::post('/temp-images',[TempImageController::class,'store']);
     // Route::delete('/temp-images/{id}',[TempImageController::class,'destroy']);
     Route::resource('temp-images',TempImageController::class);

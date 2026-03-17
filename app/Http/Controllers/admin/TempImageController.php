@@ -43,7 +43,7 @@ class TempImageController extends Controller
                 $tempImage->name = $filename;
                 $tempImage->path = $path;
                 $tempImage->save();
-
+                
                 return response()->json([
                     'status' => 200,
                     'message' => 'Image uploaded successfully',
@@ -95,6 +95,7 @@ class TempImageController extends Controller
     }
     public function destroy($id)
     {
+        
         $tempImage = TempImage::find($id);
         if (!$tempImage) {
             return response()->json([

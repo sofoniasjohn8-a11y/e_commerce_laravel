@@ -7,10 +7,13 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\TempImageController;
+use App\Http\Controllers\Admin\TempImageController; 
+use App\Http\Controllers\front\productController  as frontProductController;
 
 
 Route::post('/admin/login',[AuthController::class,'authenticate']);
+Route::get('products/get-latest',[frontProductController::class,'latest']);
+Route::get('products/get-featured',[frontProductController::class,'featured']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');

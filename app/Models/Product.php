@@ -27,6 +27,7 @@ class Product extends Model
         'barcode',
         'status',
         'is_featured',
+        'compare_price',
     ];
    protected $appends = ['image_url'];
 

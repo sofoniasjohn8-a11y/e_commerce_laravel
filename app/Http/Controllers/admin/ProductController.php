@@ -48,6 +48,7 @@ class ProductController extends Controller
             'qty'                => 'required|integer',
             'sku'                => 'required|unique:products,sku|max:100',
             'status'             => 'integer',
+            'compare_price'     => 'decimal'
             
         ];
 
@@ -182,6 +183,7 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
+        
         $product = Product::find($id);
         if (! $product) {
             return response()->json([
@@ -199,6 +201,7 @@ class ProductController extends Controller
             'qty'                => 'required|integer',
             'sku'                => 'required|unique:products,sku,' . $product->id,
             'status'             => 'integer',
+            'compare_price' => 'sometimes|nullable|numeric|gt:price'
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -209,14 +212,21 @@ class ProductController extends Controller
                 'errors' => $validator->errors()
             ], 400);
         }
-
+           
+            
         // Use a Transaction to ensure data integrity
         DB::beginTransaction();
 
         try {
             // 1. Create the Product
-            $product->update($validator->validated());
+            $data = $validator->validated();
 
+// Convert empty compare_price to null
+                if (!isset($data['compare_price']) || $data['compare_price'] === "") {
+                    $data['compare_price'] = null;
+                }
+
+                $product->update($data);
             if (!empty($request->gallery)) {
                 
                 // 2. Setup Directories (relative to 'public' disk root)

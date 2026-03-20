@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\TempImage;
 use App\Models\ProductImage;
 use App\Models\ProductSize;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -169,7 +170,6 @@ class ProductController extends Controller
                 'message' => 'Product retrieved successfully',
                 'data' => $product,
                 'productSize' => $productSize
-                
             ]);
         }
         
@@ -307,20 +307,34 @@ class ProductController extends Controller
     }
 
     public function destroy($id)
-    {
-        $product = Product::find($id);
-        if(!$product){
-            return response()->json([
-                'status'=>400,
-                'message'=>'The Product is not Found'
-            ],400);
-        }
-        $product->delete();
+{
+    // 1. Find the product with its images loaded
+    $product = Product::with('product_images')->find($id);
+
+    if (!$product) {
         return response()->json([
-            'status'=>200,
-            'message'=>'The Product has been deleted successfully'
-        ],200);
+            'status' => 404,
+            'message' => 'The Product is not Found'
+        ], 404);
     }
+
+    // 2. Loop through the collection (no parentheses)
+    if ($product->product_images->isNotEmpty()) {
+        foreach ($product->product_images as $productImage) {
+            // Use Storage::disk('public') to delete files correctly
+            Storage::disk('public')->delete('products/large/' . $productImage->image);
+            Storage::disk('public')->delete('products/small/' . $productImage->image);
+        }
+    }
+
+    // 3. Delete the product (this will delete related images in DB if you have cascade delete)
+    $product->delete();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'The Product and its images have been deleted successfully'
+    ], 200);
+   }
     public function setDefaultImage($pro_image_id)
     {
         $productImage = ProductImage::find($pro_image_id);
@@ -348,34 +362,45 @@ class ProductController extends Controller
 
 
     }
-    public function removeImage($pro_image_id)
-    {
-        
-        $productImage = ProductImage::find($pro_image_id);
-       
-        if(!$productImage){
-            return response()->json([
-                'status'=>400,
-                'message'=>'The Product Image is not Found'
-            ],400);
+  public function removeImage($pro_image_id)
+{
+    // 1. Try to find it in ProductImage first
+    $productImage = ProductImage::find($pro_image_id);
+
+    if (!$productImage) {
+        // 2. If not found, check TempImage (useful for cleanup during upload)
+        $tempImage = TempImage::find($pro_image_id);
+        if (!$tempImage) {
+            return response()->json(['status' => 404, 'message' => 'Image not found'], 404);
         }
-        $product = Product::find($productImage->product_id);
-        if(!$product){
-            return response()->json([
-                'status'=>400,
-                'message'=>'The Product is not Found'
-            ],400);
-        }
-        // Check if the image to be deleted is the current product thumbnail
-        if ($product->image == $productImage->image) {
-            $product->image = null; // Or set to a default image path
-            $product->save();
-        }
-        $productImage->delete();
-        return response()->json([
-            'status'=>200,
-            'message'=>'The Product Image has been deleted successfully',
-            'data'=>$product
-        ],200);
+
+        // Delete temp file and record
+        Storage::disk('public')->delete($tempImage->path);
+        $tempImage->delete();
+
+        return response()->json(['status' => 200, 'message' => 'Temp image deleted']);
     }
+
+    // 3. Logic for existing Product Images
+    $product = Product::find($productImage->product_id);
+    
+    // Use Storage facade with the correct relative path
+    Storage::disk('public')->delete('products/large/' . $productImage->image);
+    Storage::disk('public')->delete('products/small/' . $productImage->image);
+
+    // 4. Update Product Thumbnail if this was the main image
+    // Using 'str_contains' or checking both possible formats ensures it works
+    if ($product && ($product->image == $productImage->image || str_ends_with($product->image, $productImage->image))) {
+        $product->image = null; 
+        $product->save();
+    }
+
+    $productImage->delete();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'The Product Image has been deleted successfully',
+        'data' => $product
+    ], 200);
+}
 }

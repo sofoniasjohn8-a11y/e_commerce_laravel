@@ -48,10 +48,12 @@ class ProductController extends Controller
             'qty'                => 'required|integer',
             'sku'                => 'required|unique:products,sku|max:100',
             'status'             => 'integer',
-            'compare_price'     => 'decimal'
+            'compare_price' => 'sometimes|nullable|numeric|gt:price',
+            'is_featured' => 'nullable|in:yes,no',
+            'barcode'     =>'string'
             
         ];
-
+        
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
@@ -66,7 +68,7 @@ class ProductController extends Controller
 
         try {
             // 1. Create the Product
-            $product = Product::create($validator->validated());
+         $product = Product::create($validator->validated());
 
             if (!empty($request->gallery)) {
                 
@@ -201,7 +203,9 @@ class ProductController extends Controller
             'qty'                => 'required|integer',
             'sku'                => 'required|unique:products,sku,' . $product->id,
             'status'             => 'integer',
-            'compare_price' => 'sometimes|nullable|numeric|gt:price'
+            'compare_price' => 'sometimes|nullable|numeric|gt:price',
+            'is_featured'        =>'string',
+            'barcode'     =>'string'
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -286,7 +290,7 @@ class ProductController extends Controller
                 }
             }
              if(!empty($request->sizes)){
-                $productSize = ProductSize::where('product_id',$product->id)->delete();
+               // $productSize = ProductSize::where('product_id',$product->id)->delete();
                 foreach($request->sizes as $sizeId){
                 $productSizes = new ProductSize();
                 $productSizes->product_id = $product->id;

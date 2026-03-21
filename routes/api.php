@@ -14,6 +14,9 @@ use App\Http\Controllers\front\productController  as frontProductController;
 Route::post('/admin/login',[AuthController::class,'authenticate']);
 Route::get('products/get-latest',[frontProductController::class,'latest']);
 Route::get('products/get-featured',[frontProductController::class,'featured']);
+Route::get('/get-categories',[frontProductController::class,'getCategories']);
+Route::get('/get-brands',[frontProductController::class,'getBrands']);
+Route::get('/get-products',[frontProductController::class,'getProducts']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');

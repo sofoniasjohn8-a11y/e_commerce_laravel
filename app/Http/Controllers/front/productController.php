@@ -75,4 +75,11 @@ class productController extends Controller
         ]);
 
     }
+    public function getProduct($id){
+        $product = Product::with('product_images','product_sizes.size')->find($id);
+        return response()->json([
+            'status' => 200,
+            'data'   => $product
+        ]);
+    }
 }

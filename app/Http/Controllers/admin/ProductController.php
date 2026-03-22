@@ -207,7 +207,7 @@ class ProductController extends Controller
             'is_featured'        =>'string',
             'barcode'     =>'string'
         ];
-
+        
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
@@ -290,7 +290,10 @@ class ProductController extends Controller
                 }
             }
              if(!empty($request->sizes)){
-               // $productSize = ProductSize::where('product_id',$product->id)->delete();
+                $productSize = ProductSize::where('product_id',$product->id);
+                if($productSize){
+                    $productSize = $productSize->delete();
+                }
                 foreach($request->sizes as $sizeId){
                 $productSizes = new ProductSize();
                 $productSizes->product_id = $product->id;

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\TempImageController;
 use App\Http\Controllers\front\productController  as frontProductController;
 use App\Http\Controllers\front\AccountController;
 use App\Http\Controllers\front\OrderController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 
 
 Route::post('/admin/login',[AuthController::class,'authenticate']);
@@ -38,4 +39,5 @@ Route::group(['middleware'=>['auth:sanctum','checkAdminRole']],function(){
     Route::put('products/setDDefaultImage/{id}',[ProductController::class,'setDefaultImage']);
     Route::delete('products/removeImage/{id}',[ProductController::class,'removeImage']);
     Route::resource('temp-images',TempImageController::class);
+    Route::resource('order',AdminOrderController::class);
 });

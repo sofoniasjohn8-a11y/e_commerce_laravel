@@ -100,22 +100,81 @@ class AccountController extends Controller
             'data' => $orders
         ],200);
     }
-    public function getOrderDetail($id) {
-    // Use first() to get a single object or null
-    $order = Order::with('items','items.product')->find($id);
+        public function getOrderDetail($id)
+       {
+          // Use first() to get a single object or null
+                    $order = Order::with('items','items.product')->find($id);
 
-    // Now this check will work correctly
-    if (!$order) {
+         // Now this check will work correctly
+                if (!$order) {
+                    return response()->json([
+                        'data' => null,
+                        'message' => "Order not Found",
+                        'status' => 404 // Use 404 for "Not Found"
+                    ], 404);
+                }
+
+                return response()->json([
+                    'data' => $order,
+                    'status' => 200
+                ], 200);
+            }
+    public function updateProfile(Request $request){
+        $user = User::find($request->user()->id);
+        if($user == null){
+            response()->json([
+                'status'=> 400,
+                'message'=>'User is Not Found'
+            ],400);
+        }
+
+        $rules = [
+            'name'             => 'required',
+            'email'             =>'required|unique:users,email,' . $user->id,
+            'address'       => 'required',
+            'state' => 'required',
+            'zip'       => 'required',
+            'city'       => 'required',
+            'mobile'       => 'required'
+        ];
+        
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 400,
+                'errors' => $validator->errors()
+            ], 400);
+        }
+        $user->name=$request->name;
+        $user->email=$request->email;
+        $user->address=$request->address;
+        $user->state=$request->state;
+        $user->city=$request->city;
+        $user->mobile=$request->mobile;
+        $user->zip=$request->zip;
+        $user->save();
+
         return response()->json([
-            'data' => null,
-            'message' => "Order not Found",
-            'status' => 404 // Use 404 for "Not Found"
-        ], 404);
-    }
+            'status'=> 200,
+            'data' => $user,
+            'message' => "You have Updated your Credentials Successfully"
+        ],200);
 
-    return response()->json([
-        'data' => $order,
-        'status' => 200
-    ], 200);
-}
+    }
+    public function getProfileDetails(Request $request){
+        $user = User::find($request->user()->id);
+
+         if($user == null){
+            response()->json([
+                'status'=> 400,
+                'message'=>'User is Not Found'
+            ],400);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'data'  => $user
+        ],200);
+    }
 }

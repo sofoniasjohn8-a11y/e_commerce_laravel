@@ -92,4 +92,30 @@ class AccountController extends Controller
                 ],200);
             }
     }
+    public function getOrders(Request  $request){
+        $orders = Order::where('user_id',$request->user()->id)->get();
+
+        return response()->json([
+            'status' => 200,
+            'data' => $orders
+        ],200);
+    }
+    public function getOrderDetail($id) {
+    // Use first() to get a single object or null
+    $order = Order::with('items','items.product')->find($id);
+
+    // Now this check will work correctly
+    if (!$order) {
+        return response()->json([
+            'data' => null,
+            'message' => "Order not Found",
+            'status' => 404 // Use 404 for "Not Found"
+        ], 404);
+    }
+
+    return response()->json([
+        'data' => $order,
+        'status' => 200
+    ], 200);
+}
 }

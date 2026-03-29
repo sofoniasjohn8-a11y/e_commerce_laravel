@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\TempImageController; 
+use App\Http\Controllers\Admin\ShippingController; 
+use App\Http\Controllers\front\ShippingController as frontShippingController;
 use App\Http\Controllers\front\productController  as frontProductController;
 use App\Http\Controllers\front\AccountController;
 use App\Http\Controllers\front\OrderController;
@@ -22,7 +24,10 @@ Route::get('/get-brands',[frontProductController::class,'getBrands']);
 Route::get('/get-products',[frontProductController::class,'getProducts']);
 Route::get('/get-product/{id}',[frontProductController::class,'getProduct']);
 Route::post('/register',[AccountController::class,'register']);
+Route::post('/admin/register',[AuthController::class,'register']);
 Route::post('/login',[AccountController::class,'authenticate']);
+Route::get('/get-shipping-front',[frontShippingController::class,'get_shipping']);
+
 
 
 
@@ -44,4 +49,6 @@ Route::group(['middleware'=>['auth:sanctum','checkAdminRole']],function(){
     Route::delete('products/removeImage/{id}',[ProductController::class,'removeImage']);
     Route::resource('temp-images',TempImageController::class);
     Route::resource('order',AdminOrderController::class);
+    Route::get('get-shipping',[ShippingController::class,'get_shipping']);
+    Route::put('update-shipping',[ShippingController::class,'update_shipping']);
 });

@@ -7,9 +7,36 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator; // 2. Added Validator import
 use Illuminate\Support\Facades\Auth;      // 3. Added Auth import
 use App\Models\User;                      // 4. Added User model import
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public  function register(Request $request){
+        $rules = [
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
+        ];
+        $validator = Validator::make($request->all(),$rules);
+        if($validator->fails()){
+            return response()->json([
+                'status' => 400,
+                'error' => $validator->errors()
+            ],400);
+        }
+
+        $user = new User();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->password = Hash::make($request->password);
+        $user->role = 'admin';
+        $user->save();
+
+    return response()->json([
+                'status' => 200,
+                'message' => 'You Have Registered Succesfully'
+            ],200);
+    }
     public function authenticate(Request $request)
     {
         $validator = Validator::make($request->all(), [

@@ -32,6 +32,7 @@ Route::get('/get-shipping-front',[frontShippingController::class,'get_shipping']
 
 
 Route::group(['middleware'=>['auth:sanctum','checkUserRole']],function(){
+     Route::put('/account/change-password',[AccountController::class,'changePassword']);
     Route::post('/save_product',[OrderController::class,'saveOrder']);
     Route::get('/get-order-details/{id}',[AccountController::class,'getOrderDetails']);
     Route::get('/get-order',[AccountController::class,'getOrders']);
@@ -41,7 +42,7 @@ Route::group(['middleware'=>['auth:sanctum','checkUserRole']],function(){
     Route::post('/create-payment-intent',[OrderController::class,'createPaymentIntent']);
 });
 Route::group(['middleware'=>['auth:sanctum','checkAdminRole']],function(){
-  
+    Route::put('/admin/change-password',[AuthController::class,'changePassword']);
     Route::resource('categories',CategoryController::class);
     Route::resource('brands',BrandController::class);
     Route::get('/sizes',[SizeController::class,'index']);

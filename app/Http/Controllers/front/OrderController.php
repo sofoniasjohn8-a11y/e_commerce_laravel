@@ -6,6 +6,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
+
+
 
 class OrderController extends Controller
 {
@@ -24,6 +28,7 @@ class OrderController extends Controller
             $order->discount = $request->discount;
             $order->shipping = $request->shipping;
             $order->payment_status = $request->payment_status;
+            $order->payment_method = $request->payment_method;
             $order->status = $request->status;
             $order->user_id = $request->user()->id;
             $order->save();
@@ -54,5 +59,33 @@ class OrderController extends Controller
       
         
     }
-      
+     public function createPaymentIntent(Request $request) {
+    try {
+        // Validate that amount exists and is a number
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        // Use the secret key from env
+        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET_KEY'));
+
+        $paymentIntent = PaymentIntent::create([
+            // Use round() to ensure we send an integer to Stripe
+            'amount' => round($request->amount), 
+            'currency' => 'usd',
+            'payment_method_types' => ['card'],
+        ]);
+
+        return response()->json([
+            'status' => 200,
+            'client_secret' => $paymentIntent->client_secret
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 500,
+            'message' => 'Stripe Error: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 }

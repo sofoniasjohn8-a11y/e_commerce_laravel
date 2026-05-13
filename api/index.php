@@ -1,7 +1,11 @@
 <?php
 
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
+
 define('LARAVEL_START', microtime(true));
 
+// CORS preflight
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = [
     'http://localhost:5173',
@@ -23,26 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
+    require $maintenance;
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
+/** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$request = Illuminate\Http\Request::capture();
-$response = $kernel->handle($request);
-
-http_response_code($response->getStatusCode());
-
-foreach ($response->headers->allPreserveCaseWithoutCookies() as $name => $values) {
-    foreach ($values as $value) {
-        header("$name: $value", false);
-    }
-}
-
-foreach ($response->headers->getCookies() as $cookie) {
-    header('Set-Cookie: ' . $cookie, false);
-}
-
-echo $response->getContent();
-
-$kernel->terminate($request, $response);
+$app->handleRequest(Request::capture());

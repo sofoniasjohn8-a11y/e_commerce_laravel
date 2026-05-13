@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm ci && npm run build && cp .env.production .env",
+  "buildCommand": "npm ci && npm run build && cp .env.deploy .env",
   "outputDirectory": ".",
   "functions": {
     "api/index.php": {

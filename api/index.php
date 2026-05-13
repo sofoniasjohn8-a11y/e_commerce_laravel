@@ -27,9 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Vercel filesystem is read-only — use /tmp for all writable paths
+// Create writable dirs in /tmp for Vercel's read-only filesystem
 $tmpBase = '/tmp/laravel';
-$dirs = [
+foreach ([
     "$tmpBase/storage/framework/cache/data",
     "$tmpBase/storage/framework/sessions",
     "$tmpBase/storage/framework/views",
@@ -37,19 +37,13 @@ $dirs = [
     "$tmpBase/storage/logs",
     "$tmpBase/storage/app/public",
     "$tmpBase/bootstrap/cache",
-];
-foreach ($dirs as $dir) {
-    if (!is_dir($dir)) {
-        mkdir($dir, 0775, true);
-    }
+] as $dir) {
+    if (!is_dir($dir)) mkdir($dir, 0775, true);
 }
 
 require __DIR__ . '/../vendor/autoload.php';
 
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
-
-$app->useStoragePath("$tmpBase/storage");
-$app->useBootstrapPath("$tmpBase/bootstrap");
 
 $app->handleRequest(Request::capture());

@@ -1,6 +1,6 @@
 <?php
+
 define('LARAVEL_START', microtime(true));
-echo 'PHP_OK';exit;
 
 // Handle CORS preflight before Laravel boots
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -29,17 +29,12 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-
 $request = Illuminate\Http\Request::capture();
+
+ob_start();
 $response = $kernel->handle($request);
-
-foreach ($response->headers->all() as $name => $values) {
-    foreach ($values as $value) {
-        header("$name: $value", false);
-    }
-}
-
-http_response_code($response->getStatusCode());
-echo $response->getContent();
-
+$response->send();
 $kernel->terminate($request, $response);
+$output = ob_get_clean();
+
+echo $output;

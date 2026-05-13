@@ -24,6 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Use .env.production on Vercel
+$envFile = file_exists(__DIR__ . '/../.env.production') ? '.env.production' : '.env';
+$_ENV['APP_ENV_FILE'] = $envFile;
+putenv('APP_ENV_FILE=' . $envFile);
+
+// Copy .env.production to .env if it doesn't exist
+if (!file_exists(__DIR__ . '/../.env') && file_exists(__DIR__ . '/../.env.production')) {
+    copy(__DIR__ . '/../.env.production', __DIR__ . '/../.env');
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';

@@ -1,12 +1,7 @@
 <?php
-$storage = __DIR__ . '/../storage/framework';
-$dirs = ['cache/data','sessions','views','testing'];
-foreach($dirs as $d){
-    $path = $storage.'/'.$d;
-    if(!is_dir($path)) mkdir($path,0775,true);
-}
-echo json_encode(['storage_writable'=>is_writable($storage),'env_exists'=>file_exists(__DIR__.'/../.env'),'env_content'=>file_get_contents(__DIR__.'/../.env')]);
-exit;
+
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
@@ -32,6 +27,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// Use /tmp for writable storage on Vercel (read-only filesystem)
+$tmpStorage = '/tmp/storage';
+$dirs = [
+    "$tmpStorage/framework/cache/data",
+    "$tmpStorage/framework/sessions",
+    "$tmpStorage/framework/views",
+    "$tmpStorage/framework/testing",
+    "$tmpStorage/logs",
+    "$tmpStorage/app/public",
+];
+foreach ($dirs as $dir) {
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+}
+
+// Symlink storage to /tmp
+$storageLink = __DIR__ . '/../storage';
+if (!is_link($storageLink) && !is_writable($storageLink)) {
+    // Override storage path via environment
+    putenv("APP_STORAGE_PATH=$tmpStorage");
+    $_ENV['APP_STORAGE_PATH'] = $tmpStorage;
+}
+
 if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
@@ -40,5 +59,8 @@ require __DIR__ . '/../vendor/autoload.php';
 
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
+
+// Override storage path to /tmp
+$app->useStoragePath($tmpStorage);
 
 $app->handleRequest(Request::capture());

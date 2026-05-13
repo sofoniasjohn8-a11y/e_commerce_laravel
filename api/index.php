@@ -27,15 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// Use /tmp for writable storage on Vercel (read-only filesystem)
-$tmpStorage = '/tmp/storage';
+// Vercel filesystem is read-only — use /tmp for all writable paths
+$tmpBase = '/tmp/laravel';
 $dirs = [
-    "$tmpStorage/framework/cache/data",
-    "$tmpStorage/framework/sessions",
-    "$tmpStorage/framework/views",
-    "$tmpStorage/framework/testing",
-    "$tmpStorage/logs",
-    "$tmpStorage/app/public",
+    "$tmpBase/storage/framework/cache/data",
+    "$tmpBase/storage/framework/sessions",
+    "$tmpBase/storage/framework/views",
+    "$tmpBase/storage/framework/testing",
+    "$tmpBase/storage/logs",
+    "$tmpBase/storage/app/public",
+    "$tmpBase/bootstrap/cache",
 ];
 foreach ($dirs as $dir) {
     if (!is_dir($dir)) {
@@ -43,24 +44,12 @@ foreach ($dirs as $dir) {
     }
 }
 
-// Symlink storage to /tmp
-$storageLink = __DIR__ . '/../storage';
-if (!is_link($storageLink) && !is_writable($storageLink)) {
-    // Override storage path via environment
-    putenv("APP_STORAGE_PATH=$tmpStorage");
-    $_ENV['APP_STORAGE_PATH'] = $tmpStorage;
-}
-
-if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
-    require $maintenance;
-}
-
 require __DIR__ . '/../vendor/autoload.php';
 
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// Override storage path to /tmp
-$app->useStoragePath($tmpStorage);
+$app->useStoragePath("$tmpBase/storage");
+$app->useBootstrapPath("$tmpBase/bootstrap");
 
 $app->handleRequest(Request::capture());

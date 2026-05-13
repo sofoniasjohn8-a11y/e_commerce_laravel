@@ -1,5 +1,11 @@
 <?php
-phpinfo();
+$storage = __DIR__ . '/../storage/framework';
+$dirs = ['cache/data','sessions','views','testing'];
+foreach($dirs as $d){
+    $path = $storage.'/'.$d;
+    if(!is_dir($path)) mkdir($path,0775,true);
+}
+echo json_encode(['storage_writable'=>is_writable($storage),'env_exists'=>file_exists(__DIR__.'/../.env'),'env_content'=>file_get_contents(__DIR__.'/../.env')]);
 exit;
 
 define('LARAVEL_START', microtime(true));

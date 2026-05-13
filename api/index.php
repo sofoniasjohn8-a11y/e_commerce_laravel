@@ -1,6 +1,6 @@
 <?php
-
 define('LARAVEL_START', microtime(true));
+echo 'PHP_OK';exit;
 
 // Handle CORS preflight before Laravel boots
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';

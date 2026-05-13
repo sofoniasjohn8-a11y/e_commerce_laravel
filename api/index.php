@@ -2,7 +2,6 @@
 
 define('LARAVEL_START', microtime(true));
 
-// Handle CORS preflight before Laravel boots
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = [
     'http://localhost:5173',
@@ -30,11 +29,20 @@ $app = require_once __DIR__ . '/../bootstrap/app.php';
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $request = Illuminate\Http\Request::capture();
-
-ob_start();
 $response = $kernel->handle($request);
-$response->send();
-$kernel->terminate($request, $response);
-$output = ob_get_clean();
 
-echo $output;
+http_response_code($response->getStatusCode());
+
+foreach ($response->headers->allPreserveCaseWithoutCookies() as $name => $values) {
+    foreach ($values as $value) {
+        header("$name: $value", false);
+    }
+}
+
+foreach ($response->headers->getCookies() as $cookie) {
+    header('Set-Cookie: ' . $cookie, false);
+}
+
+echo $response->getContent();
+
+$kernel->terminate($request, $response);

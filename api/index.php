@@ -50,6 +50,18 @@ if (isset($_SERVER['REQUEST_URI']) && !str_starts_with($_SERVER['REQUEST_URI'], 
     $_SERVER['PATH_INFO'] = '/api' . ($_SERVER['PATH_INFO'] ?? $_SERVER['REQUEST_URI']);
 }
 
+// DEBUG: show what URI Laravel sees
+if (isset($_GET['debug_uri'])) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? 'not set',
+        'PATH_INFO' => $_SERVER['PATH_INFO'] ?? 'not set',
+        'SCRIPT_NAME' => $_SERVER['SCRIPT_NAME'] ?? 'not set',
+        'PHP_SELF' => $_SERVER['PHP_SELF'] ?? 'not set',
+    ]);
+    exit;
+}
+
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 

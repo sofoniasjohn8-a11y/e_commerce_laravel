@@ -43,6 +43,13 @@ foreach ([
 
 require __DIR__ . '/../vendor/autoload.php';
 
+// Vercel strips /api prefix when routing to api/index.php
+// Restore the full path so Laravel routing works correctly
+if (isset($_SERVER['REQUEST_URI']) && !str_starts_with($_SERVER['REQUEST_URI'], '/api')) {
+    $_SERVER['REQUEST_URI'] = '/api' . $_SERVER['REQUEST_URI'];
+    $_SERVER['PATH_INFO'] = '/api' . ($_SERVER['PATH_INFO'] ?? $_SERVER['REQUEST_URI']);
+}
+
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 

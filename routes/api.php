@@ -9,10 +9,10 @@ use App\Http\Controllers\Admin\SizeController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\TempImageController; 
 use App\Http\Controllers\Admin\ShippingController; 
-use App\Http\Controllers\front\ShippingController as frontShippingController;
-use App\Http\Controllers\front\productController  as frontProductController;
-use App\Http\Controllers\front\AccountController;
-use App\Http\Controllers\front\OrderController;
+use App\Http\Controllers\Front\ShippingController as frontShippingController;
+use App\Http\Controllers\Front\productController  as frontProductController;
+use App\Http\Controllers\Front\AccountController;
+use App\Http\Controllers\Front\OrderController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 
 

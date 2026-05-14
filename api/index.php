@@ -6,24 +6,22 @@ use Illuminate\Contracts\Http\Kernel;
 
 define('LARAVEL_START', microtime(true));
 
-// CORS preflight
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowed = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://efrontend-ovutl5aak-sofoniasjohn8-a11ys-projects.vercel.app',
-    'https://efrontend-ten.vercel.app',
-    'https://e-commerce-front-seven-orcin.vercel.app',
-];
-
-if (in_array($origin, $allowed)) {
-    header('Access-Control-Allow-Origin: ' . $origin);
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With');
-    header('Access-Control-Max-Age: 86400');
-}
-
+// Handle OPTIONS preflight only — Laravel handles actual CORS headers
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowed = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://efrontend-ovutl5aak-sofoniasjohn8-a11ys-projects.vercel.app',
+        'https://efrontend-ten.vercel.app',
+        'https://e-commerce-front-seven-orcin.vercel.app',
+    ];
+    if (in_array($origin, $allowed)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Accept, Authorization, X-Requested-With');
+        header('Access-Control-Max-Age: 86400');
+    }
     http_response_code(204);
     exit();
 }
@@ -65,5 +63,5 @@ try {
 } catch (\Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json');
-    echo json_encode(['error' => $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
+    echo json_encode(['error' => $e->getMessage()]);
 }

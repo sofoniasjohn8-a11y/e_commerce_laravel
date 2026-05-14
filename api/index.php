@@ -47,20 +47,12 @@ require __DIR__ . '/../vendor/autoload.php';
 // Restore the full path so Laravel routing works correctly
 if (isset($_SERVER['REQUEST_URI']) && !str_starts_with($_SERVER['REQUEST_URI'], '/api')) {
     $_SERVER['REQUEST_URI'] = '/api' . $_SERVER['REQUEST_URI'];
-    $_SERVER['PATH_INFO'] = '/api' . ($_SERVER['PATH_INFO'] ?? $_SERVER['REQUEST_URI']);
 }
 
-// DEBUG: show what URI Laravel sees
-if (isset($_GET['debug_uri'])) {
-    header('Content-Type: application/json');
-    echo json_encode([
-        'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? 'not set',
-        'PATH_INFO' => $_SERVER['PATH_INFO'] ?? 'not set',
-        'SCRIPT_NAME' => $_SERVER['SCRIPT_NAME'] ?? 'not set',
-        'PHP_SELF' => $_SERVER['PHP_SELF'] ?? 'not set',
-    ]);
-    exit;
-}
+// Fix SCRIPT_NAME so Laravel doesn't strip /api from the path
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/index.php';
+$_SERVER['PHP_SELF'] = '/index.php';
 
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';

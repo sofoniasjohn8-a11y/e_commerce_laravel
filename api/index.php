@@ -53,6 +53,23 @@ $_SERVER['PHP_SELF'] = '/index.php';
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
+// Quick DB test endpoint
+if (($_SERVER['REQUEST_URI'] ?? '') === '/api/db-test') {
+    try {
+        $pdo = new PDO(
+            'pgsql:host=db.vvxdfvsdebrsqvwhhlty.supabase.co;port=5432;dbname=postgres;sslmode=require',
+            'postgres',
+            'enk@#$han556'
+        );
+        header('Content-Type: application/json');
+        echo json_encode(['db' => 'connected']);
+    } catch (\Exception $e) {
+        header('Content-Type: application/json');
+        echo json_encode(['db_error' => $e->getMessage()]);
+    }
+    exit;
+}
+
 $kernel = $app->make(Kernel::class);
 $request = Request::capture();
 

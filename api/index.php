@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Contracts\Http\Kernel;
 
 define('LARAVEL_START', microtime(true));
 
@@ -43,13 +44,10 @@ foreach ([
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// Vercel strips /api prefix when routing to api/index.php
-// Restore the full path so Laravel routing works correctly
-if (isset($_SERVER['REQUEST_URI']) && !str_starts_with($_SERVER['REQUEST_URI'], '/api')) {
-    $_SERVER['REQUEST_URI'] = '/api' . $_SERVER['REQUEST_URI'];
+// Fix SCRIPT_NAME so Laravel resolves /api routes correctly
+if (!str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api')) {
+    $_SERVER['REQUEST_URI'] = '/api' . ($_SERVER['REQUEST_URI'] ?? '/');
 }
-
-// Fix SCRIPT_NAME so Laravel doesn't strip /api from the path
 $_SERVER['SCRIPT_NAME'] = '/index.php';
 $_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/index.php';
 $_SERVER['PHP_SELF'] = '/index.php';
@@ -57,10 +55,15 @@ $_SERVER['PHP_SELF'] = '/index.php';
 /** @var Application $app */
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
+$kernel = $app->make(Kernel::class);
+$request = Request::capture();
+
 try {
-    $app->handleRequest(Request::capture());
+    $response = $kernel->handle($request);
+    $response->send();
+    $kernel->terminate($request, $response);
 } catch (\Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json');
-    echo json_encode(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+    echo json_encode(['error' => $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
 }
